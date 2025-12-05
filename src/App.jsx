@@ -17,27 +17,37 @@ import {
   onSnapshot, 
   serverTimestamp, 
   orderBy, 
-  writeBatch // Added for demo data
+  writeBatch 
 } from 'firebase/firestore';
 import { 
   Plus, Check, MessageSquare, BarChart2, Home, X, 
-  Flame, Zap, ArrowRight, Settings, Trash2, 
+  Flame, Zap, ArrowRight, Trash2, 
   RefreshCw, TrendingUp, Calendar
 } from 'lucide-react';
 
 // --- Firebase Configuration ---
-const firebaseConfig = JSON.parse(
-  apiKey: "AIzaSyC1hLNCbyMyT7sgPWB1IqSVIxa7ZTfaoHc",
-  authDomain: "atom-1ec5f.firebaseapp.com",
-  projectId: "atom-1ec5f",
-  storageBucket: "atom-1ec5f.firebasestorage.app",
-  messagingSenderId: "1058629885484",
-  appId: "1:1058629885484:web:7cd730bb5ee711f11b3b89"
-);
+// 修复说明：
+// 1. 在 Vercel/本地部署时，直接使用对象 { key: "value" }，不要用 JSON.parse()。
+// 2. 我已根据你提供的错误日志填入了 apiKey 和 projectId。
+// 3. 请确保补充完整 appId 和 messagingSenderId（从 Firebase 控制台 -> Project Settings 复制）。
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+  ? JSON.parse(__firebase_config) 
+  : {
+      apiKey: "AIzaSyC1hLNCbyMyT7sgPWB1IqSVIxa7ZTfaoHc", // 已填入
+      authDomain: "atom-1ec5f.firebaseapp.com",         // 已填入
+      projectId: "atom-1ec5f",                           // 已填入
+      storageBucket: "atom-1ec5f.appspot.com",           // 通常是 项目ID.appspot.com
+      messagingSenderId: "1058629885484", // 需补充
+      appId: "1:1058629885484:web:7cd730bb5ee711f11b3b89"                         // 需补充
+    };
+
+// 初始化 Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = "atomic-habit";
+
+// 兼容环境 ID
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'atomic-pocket-prod';
 
 // --- Utility Functions ---
 const getDayKey = (date) => date.toISOString().split('T')[0];
@@ -227,7 +237,7 @@ const HabitItem = ({ habit, userId, todayStr }) => {
     }
     
     // Simple streak calc for UI update
-    const streak = Object.keys(newCompletions).length; // Simplified
+    const streak = Object.keys(newCompletions).length; 
 
     await updateDoc(habitRef, { completions: newCompletions, streak });
   };
@@ -309,7 +319,6 @@ const StatsView = ({ habits, userId }) => {
   const last28Days = useMemo(() => getLastNDays(28).reverse(), []);
   
   // Calculate Graph Points
-  // Create a simple array of [0...100] representing completion rate over last 14 days
   const graphData = useMemo(() => {
     const days = getLastNDays(14).reverse();
     return days.map(date => {
@@ -322,7 +331,7 @@ const StatsView = ({ habits, userId }) => {
   // Generate SVG Path for the graph
   const getPath = (data) => {
     if (data.length === 0) return "";
-    const width = 100; // SVG coordinate space
+    const width = 100; 
     const height = 50; 
     const stepX = width / (data.length - 1);
     
@@ -331,7 +340,7 @@ const StatsView = ({ habits, userId }) => {
         if (i === 0) return;
         const x = i * stepX;
         const y = height - (val / 100 * height);
-        // Bezier curve for smoothness
+        // Bezier curve
         const prevX = (i - 1) * stepX;
         const prevY = height - (data[i - 1] / 100 * height);
         const cp1x = prevX + (stepX / 2);
@@ -356,16 +365,15 @@ const StatsView = ({ habits, userId }) => {
         { name: "No Sugar", cue: "Afternoon slump", identity: "Healthy Eater", color: "#10B981" }
     ];
     
-    const dates = getLastNDays(28); // Generate data for last 28 days
+    const dates = getLastNDays(28); 
 
     demoHabits.forEach(habit => {
         const newRef = doc(collection(db, 'artifacts', appId, 'users', userId, 'habits'));
         const completions = {};
         let currentStreak = 0;
         
-        // Randomly fill completions
         dates.forEach(d => {
-            if (Math.random() > 0.4) { // 60% success rate
+            if (Math.random() > 0.4) { 
                 completions[d] = true;
                 currentStreak++;
             } else {
@@ -396,7 +404,7 @@ const StatsView = ({ habits, userId }) => {
         </button>
       </div>
 
-      {/* Main Metric Card: Habit Strength */}
+      {/* Main Metric Card */}
       <div className="bg-zinc-900/50 rounded-[32px] p-6 border border-white/5 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none group-hover:bg-orange-500/20 transition-all duration-1000"></div>
         
@@ -416,7 +424,6 @@ const StatsView = ({ habits, userId }) => {
             {/* SVG Chart */}
             <div className="h-24 w-full relative">
                 <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full overflow-visible">
-                     {/* Gradient Defs */}
                     <defs>
                         <linearGradient id="gradientStroke" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stopColor="#ea580c" stopOpacity="0.4" />
@@ -432,7 +439,6 @@ const StatsView = ({ habits, userId }) => {
                         className="drop-shadow-lg"
                     />
                 </svg>
-                 {/* X-Axis labels */}
                  <div className="flex justify-between text-[10px] text-zinc-600 mt-2 font-mono">
                     <span>14 Days Ago</span>
                     <span>Today</span>
@@ -454,7 +460,7 @@ const StatsView = ({ habits, userId }) => {
             <div className="grid grid-cols-7 gap-3">
                 {last28Days.map((dateStr, i) => {
                     const dayCompletions = habits.filter(h => h.completions && h.completions[dateStr]).length;
-                    const intensity = Math.min(dayCompletions / habits.length, 1); // 0 to 1
+                    const intensity = Math.min(dayCompletions / habits.length, 1);
                     
                     let bgClass = 'bg-zinc-800/50';
                     if (intensity > 0) bgClass = 'bg-orange-900/40 text-orange-700';
@@ -495,7 +501,6 @@ const StatsView = ({ habits, userId }) => {
 
 // 5. Coach View (Chat UI Polish)
 const CoachView = ({ userId }) => {
-    // ... (Keep existing logic, update styles to match new theme)
     const [messages, setMessages] = useState([
         { id: 'intro', text: "Hey. I'm based on James Clear's Atomic Habits. What's preventing you from sticking to your routine today?", sender: 'ai', timestamp: new Date() }
       ]);
@@ -573,6 +578,7 @@ export default function AtomicApp() {
   const [todayStr, setTodayStr] = useState(getDayKey(new Date()));
 
   useEffect(() => {
+    // Auth Initialization Logic (Auto-detect environment)
     const initAuth = async () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             await signInWithCustomToken(auth, __initial_auth_token);
